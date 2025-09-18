@@ -100,6 +100,37 @@ Qed.
 Section perfectlynormalspace.
 Context (R : realType) (T : topologicalType).
 
+Definition normal_space_closed :=
+  forall E F : set T, closed E -> closed F -> [disjoint E & F] ->
+    exists E' F' : set T,
+      [/\ open E', open F', [disjoint E' & F'], E `<=` E' & F `<=` F'].
+
+Lemma normal_space_closedP : normal_space T <-> normal_space_closed.
+Proof.
+split.
+  move=> nsT E G cE cG EG.
+  have := nsT E cE (~` G).
+  have /[swap]/[apply] [[G']] : set_nbhs E (~` G).
+    apply/set_nbhsP; exists (~` G); split => //.
+    - by rewrite openC.
+    - by apply/subsetCr/disj_setPRL.
+  case/set_nbhsP => E' [oE' EE' E'G'] G'G.
+  exists E'; exists (~` closure G'); split => //.
+  - rewrite openC; exact: closed_closure.
+  - exact/disj_setPRL/subsetC/(subset_trans E'G')/subset_closure.
+  - exact/subsetCr.
+move=> nscT E cE G /set_nbhsP[F] [/interior_id oF EF FG].
+have [] := nscT E (closure (~` F)) cE.
+- exact: closed_closure.
+- apply/disj_setPRL/subsetCr/(subset_trans EF).
+  by rewrite closure_setC setCK oF.
+move=> E' [F'] [oE' /interior_id oF' HF' EH].
+rewrite closure_setC => /subsetCl.
+rewrite oF => F'F.
+exists (~` F'); last by apply: subset_trans FG; rewrite closure_setC oF'.
+apply/set_nbhsP; exists E'; split => //; exact/subsetCr/disj_setPRL.
+Qed.
+
 Definition perfectly_normal_space (x : R) :=
   forall E : set T, closed E -> 
     exists f : T -> R, continuous f /\ E = f @^-1` [set x].
@@ -132,8 +163,9 @@ Definition perfectly_normal_space' (x : R) :=
 
 Definition perfectly_normal_space01 :=
   forall E F : set T, closed E -> closed F -> [disjoint E & F] ->
-    exists f : T -> R, continuous f /\ E = f @^-1` [set 0] /\ F = f @^-1` [set 1] 
-      /\ f @` [set: T] = `[0, 1]%classic.
+    exists f : T -> R,
+      [/\ continuous f, E = f @^-1` [set 0], F = f @^-1` [set 1]
+        & f @` [set: T] = `[0, 1]%classic].
 
 Definition perfectly_normal_space_Gdelta :=
   normal_space T /\ forall E : set T, closed E -> Gdelta E.
@@ -160,6 +192,29 @@ Let perfectly_normal_space_34 :
 Proof.
 Admitted.
 
+Lemma perfectly_normal_space01_normal_closed :
+  perfectly_normal_space01 -> normal_space_closed.
+Proof.
+move=> pns01 E F cE cF EF.
+case: (pns01 E F cE cF EF) => f [/continuousP /= cf E0 F1 Rf].
+exists (f@^-1` `]-oo,1/2[).
+exists (f@^-1` `]1/2,+oo[); split.
+- exact: cf.
+- exact: cf.
+- apply/disj_setPRL.
+  rewrite preimage_setC.
+  apply: preimage_subset => x.
+  rewrite /= !in_itv /= andbT.
+  apply: contraTnot.
+  rewrite -leNgt; exact: ltW.
+- rewrite E0.
+  apply: preimage_subset => x /= ->.
+  by rewrite in_itv /= ltr_pdivlMr.
+- rewrite F1.
+  apply: preimage_subset => x /= ->.
+  by rewrite in_itv /= andbT ltr_pdivrMr // mul1r ltr1n.
+Qed.
+
 Lemma perfectly_normal_space01_normal :
   perfectly_normal_space01 -> normal_space T.
 Proof.
@@ -167,7 +222,7 @@ move=> pns01 A cA B /set_nbhsP[C] [oC AC CB].
 case: (pns01 A (~` C) cA).
 - by rewrite closedC.
 - exact/disj_setPCl.
-move=> f [/continuousP /= cf] [f0] [f1] f01.
+move=> f [/continuousP /= cf f0 f1 f01].
 exists (f @^-1` `]-oo, 1/2]).
   apply/set_nbhsP.
   exists (f @^-1` `]-oo, 1/2[).
@@ -192,7 +247,7 @@ move=> pns01; split.
 move=> E cE.
 have [] := pns01 _ _ cE closed0.
   by apply/disj_setPLR; rewrite setC0.
-move=> f [cf] [f0] [f1] f01.
+move=> f [cf f0 f1 f01].
 exists (fun n => f @^-1` `]-oo, 1/n.+1%:R[).
   move=> n; move/continuousP: cf; exact.
 rewrite f0.
