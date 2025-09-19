@@ -192,14 +192,9 @@ Lemma norm_preimage0 (f : T -> R) :
   exists f' : T -> R, [/\ continuous f', (forall x, f' x >= 0)
                         & f' @^-1` [set 0] = f @^-1` [set 0]].
 Proof.
-move=> cf.
-exists (fun x => `|f x|); split => //.
-- move=> x; apply: continuous_comp.
-    exact: cf.
-  exact: norm_continuous.
-- apply/seteqP; split => x /=.
-    exact: normr0_eq0.
-  by move->; rewrite normr0.
+move=> cf; exists (fun x => `|f x|); split => //.
+- move=> x; exact/continuous_comp/norm_continuous/cf.
+- apply/seteqP; split => [x|x /= ->]; [exact: normr0_eq0 | by rewrite normr0].
 Qed.
 
 Let perfectly_normal_space_34 :
@@ -216,7 +211,7 @@ have fg_gt0 x : f x + g x > 0.
   + by rewrite -Hg addr0.
 have fg_neq0 x : f x + g x != 0 by apply: lt0r_neq0.
 exists (fun x => f x / (f x + g x)); split.
-- move=> x. apply: (continuousM (cf x)).
+- move=> x; apply: (continuousM (cf x)).
   apply: continuous_comp; [exact/continuousD/cg/cf | exact: inv_continuous].
 - rewrite E0.
   apply/seteqP; split => x /=; first by move->; rewrite mul0r.
