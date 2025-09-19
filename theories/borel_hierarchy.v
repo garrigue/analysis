@@ -206,37 +206,31 @@ Let perfectly_normal_space_34 :
   perfectly_normal_space 0 -> perfectly_normal_space01.
 Proof.
 move=> pns0 E F cE cF EF.
-have [f [cf f0]] := pns0 E cE.
-have [g [cg g0]] := pns0 F cF.
-have [f' [cf' f'_ge0 f'0]] := norm_preimage0 cf.
-have [g' [cg' g'_ge0 g'0]] := norm_preimage0 cg.
-have fg'_gt0 x : f' x + g' x > 0.
-  move: (f'_ge0 x) (g'_ge0 x).
-  rewrite !le_eqVlt => /orP[/eqP|] Hf' /orP[/eqP|] Hg'.
-  + by move: EF; rewrite f0 g0 -f'0 -g'0 => /disj_setPRL/(_ x); elim.
-  + by rewrite -Hf' add0r.
-  + by rewrite -Hg' addr0.
-  + exact: addr_gt0.
-have fg'_neq0 x : f' x + g' x != 0 by apply: lt0r_neq0.
-exists (fun x => f' x / (f' x + g' x)); split.
-- move=> x. apply: (continuousM (cf' x)).
-  apply: continuous_comp; [exact/continuousD/cg'/cf' | exact: inv_continuous].
-- rewrite f0.
-  case/seteqP: f'0 => f'f ff'.
-  apply/seteqP; split => x /=; first by move/ff' ->; rewrite mul0r.
-  move/(f_equal (GRing.mul ^~ (f' x + g' x))).
-  by rewrite -mulrA mulVf // mulr1 mul0r => /f'f.
-- rewrite g0.
-  case/seteqP: g'0 => g'g gg'.
+have [_ [/norm_preimage0 [f [cf f_ge0 <-]] E0]] := pns0 E cE.
+have [_ [/norm_preimage0 [g [cg g_ge0 <-]] F0]] := pns0 F cF.
+have fg_gt0 x : f x + g x > 0.
+  move: (f_ge0 x) (g_ge0 x).
+  rewrite !le_eqVlt => /orP[/eqP|] Hf /orP[/eqP|] Hg; last exact: addr_gt0.
+  + by move: EF; rewrite E0 F0 => /disj_setPRL/(_ x); elim.
+  + by rewrite -Hf add0r.
+  + by rewrite -Hg addr0.
+have fg_neq0 x : f x + g x != 0 by apply: lt0r_neq0.
+exists (fun x => f x / (f x + g x)); split.
+- move=> x. apply: (continuousM (cf x)).
+  apply: continuous_comp; [exact/continuousD/cg/cf | exact: inv_continuous].
+- rewrite E0.
+  apply/seteqP; split => x /=; first by move->; rewrite mul0r.
+  move/(f_equal (GRing.mul ^~ (f x + g x))).
+  by rewrite -mulrA mulVf // mulr1 mul0r.
+- rewrite F0.
   apply/seteqP; split => x /=.
-    rewrite -{1}(addr0 (f' x)) => /gg' <-; exact: mulfV.
-  move/(f_equal (GRing.mul ^~ (f' x + g' x))).
+    rewrite -{1}(addr0 (f x)) => <-; exact: mulfV.
+  move/(f_equal (GRing.mul ^~ (f x + g x))).
   rewrite -mulrA mulVf // mulr1 mul1r => /eqP.
-  by rewrite addrC -subr_eq subrr eq_sym => /eqP /g'g.
-- move=> x [y] _ /= <-.
-  rewrite in_itv /=.
-  have fg'y : (f' y + g' y)^-1 >= 0 by apply/ltW; rewrite invr_gt0.
-  by rewrite mulr_ge0 //= -(mulfV (fg'_neq0 y)) ler_pM // lerDl.
+  by rewrite addrC -subr_eq subrr eq_sym => /eqP.
+- move=> _ [x] _ /= <-.
+  have fgx : (f x + g x)^-1 >= 0 by apply/ltW; rewrite invr_gt0.
+  by rewrite in_itv /= mulr_ge0 //= -(mulfV (fg_neq0 x)) ler_pM // lerDl.
 Qed.
 
 Lemma perfectly_normal_space01_normal_closed :
