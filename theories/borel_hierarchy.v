@@ -222,31 +222,24 @@ have fg'_gt0 x : f' x + g' x > 0.
 have fg'_neq0 x : f' x + g' x != 0 by apply: lt0r_neq0.
 exists (fun x => f' x / (f' x + g' x)); split.
 - move=> x. apply: (continuousM (cf' x)).
-  apply: continuous_comp.
-    exact/continuousD/cg'/cf'.
-  exact: inv_continuous.
+  apply: continuous_comp; [exact/continuousD/cg'/cf' | exact: inv_continuous].
 - rewrite f0.
+  case/seteqP: f'0 => f'f ff'.
   apply/seteqP; split => x /=.
-    move=> fx0; case/seteqP: f'0 => _ /(_ x fx0) /= ->.
-    by rewrite mul0r.
+    by move/ff' ->; rewrite mul0r.
   move/(f_equal (GRing.mul ^~ (f' x + g' x))).
-  rewrite -mulrA mulVf //.
-  rewrite mulr1 mul0r => f'x0.
-  by case/seteqP: f'0 => /(_ x f'x0) /= ->.
+  by rewrite -mulrA mulVf // mulr1 mul0r => /f'f.
 - rewrite g0.
+  case/seteqP: g'0 => g'g gg'.
   apply/seteqP; split => x /=.
-    move=> gx0; case/seteqP: g'0 => _ /(_ x gx0) /= => g'x0.
-    rewrite g'x0 addr0 mulfV //.
-    by rewrite -[f' x]addr0 -{1}g'x0.
+    rewrite -{1}(addr0 (f' x)) => /gg' <-; exact: mulfV.
   move/(f_equal (GRing.mul ^~ (f' x + g' x))).
-  rewrite -mulrA mulVf //.
-  rewrite mulr1 mul1r => /eqP.
-  rewrite addrC -subr_eq subrr eq_sym => /eqP g'x0.
-  by case/seteqP: g'0 => /(_ x g'x0) /= ->.
+  rewrite -mulrA mulVf // mulr1 mul1r => /eqP.
+  by rewrite addrC -subr_eq subrr eq_sym => /eqP /g'g.
 - move=> x [y] _ /= <-.
   rewrite in_itv /=.
   have fg'y : (f' y + g' y)^-1 >= 0 by apply/ltW; rewrite invr_gt0.
-  rewrite mulr_ge0 //= -(@mulfV _ (f' y + g' y)) //.
+  rewrite mulr_ge0 //= -(mulfV (fg'_neq0 y)).
   by apply: ler_pM; rewrite // lerDl.
 Qed.
 
