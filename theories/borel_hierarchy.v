@@ -113,7 +113,7 @@ split.
   have /[swap]/[apply] [[G']] : set_nbhs E (~` G).
     apply/set_nbhsP; exists (~` G); split => //.
     - by rewrite openC.
-    - by apply/subsetCr/disj_setPRL.
+    - exact/disj_setPLR.
   case/set_nbhsP => E' [oE' EE' E'G'] G'G.
   exists E'; exists (~` closure G'); split => //.
   - rewrite openC; exact: closed_closure.
@@ -122,7 +122,7 @@ split.
 move=> nscT E cE G /set_nbhsP[F] [/interior_id oF EF FG].
 have [] := nscT E (closure (~` F)) cE.
 - exact: closed_closure.
-- apply/disj_setPRL/subsetCr/(subset_trans EF).
+- apply/disj_setPLR/(subset_trans EF).
   by rewrite closure_setC setCK oF.
 move=> E' [F'] [oE' /interior_id oF' HF' EH].
 rewrite closure_setC => /subsetCl.
@@ -165,7 +165,7 @@ Definition perfectly_normal_space01 :=
   forall E F : set T, closed E -> closed F -> [disjoint E & F] ->
     exists f : T -> R,
       [/\ continuous f, E = f @^-1` [set 0], F = f @^-1` [set 1]
-        & f @` [set: T] = `[0, 1]%classic].
+        & range f `<=` `[0, 1]%classic].
 
 Definition perfectly_normal_space_Gdelta :=
   normal_space T /\ forall E : set T, closed E -> Gdelta E.
@@ -187,10 +187,70 @@ split=> //.
 by rewrite -[RHS]setCK preimage_setC -f0 setCK.
 Qed.
 
+Lemma norm_preimage0 (f : T -> R) :
+  continuous f ->
+  exists f' : T -> R, [/\ continuous f', (forall x, f' x >= 0)
+                        & f' @^-1` [set 0] = f @^-1` [set 0]].
+Proof.
+move=> cf.
+exists (fun x => `|f x|); split => //.
+- move=> x; apply: continuous_comp.
+    exact: cf.
+  exact: norm_continuous.
+- apply/seteqP; split => x /=.
+    exact: normr0_eq0.
+  by move->; rewrite normr0.
+Qed.
+
 Let perfectly_normal_space_34 :
   perfectly_normal_space 0 -> perfectly_normal_space01.
 Proof.
-Admitted.
+move=> pns0 E F cE cF EF.
+have [f [cf f0]] := pns0 E cE.
+have [g [cg g0]] := pns0 F cF.
+have [f' [cf' f'_ge0 f'0]] := norm_preimage0 cf.
+have [g' [cg' g'_ge0 g'0]] := norm_preimage0 cg.
+have fg'_gt0 x : f' x + g' x > 0.
+  have := g'_ge0 x.
+  have := f'_ge0 x.
+  rewrite !le_eqVlt => /orP[/eqP|] Hf' /orP[/eqP|] Hg'.
+  + move: EF; rewrite f0 g0 -f'0 -g'0 => /disj_setPRL/(_ x) /=.
+    by rewrite -Hf' -Hg'; elim.
+  + by rewrite -Hf' add0r.
+  + by rewrite -Hg' addr0.
+  + exact: addr_gt0.
+exists (fun x => f' x / (f' x + g' x)); split.
+- move=> x. apply: (continuousM (cf' x)).
+  apply: continuous_comp.
+    exact/continuousD/cg'/cf'.
+  apply: inv_continuous.
+  exact: lt0r_neq0.
+- rewrite f0.
+  apply/seteqP; split => x /=.
+    move=> fx0; case/seteqP: f'0 => _ /(_ x fx0) /= ->.
+    by rewrite mul0r.
+  move/(f_equal (GRing.mul ^~ (f' x + g' x))).
+  rewrite -mulrA mulVf; last by exact: lt0r_neq0.
+  rewrite mulr1 mul0r => f'x0.
+  by case/seteqP: f'0 => /(_ x f'x0) /= ->.
+- rewrite g0.
+  apply/seteqP; split => x /=.
+    move=> gx0; case/seteqP: g'0 => _ /(_ x gx0) /= => g'x0.
+    rewrite g'x0 addr0 mulfV //.
+    by apply/lt0r_neq0; rewrite -[ltRHS]addr0 -[in ltRHS]g'x0.
+  move/(f_equal (GRing.mul ^~ (f' x + g' x))).
+  rewrite -mulrA mulVf; last by exact: lt0r_neq0.
+  rewrite mulr1 mul1r => /eqP.
+  rewrite addrC -subr_eq subrr eq_sym => /eqP g'x0.
+  by case/seteqP: g'0 => /(_ x g'x0) /= ->.
+- move=> x [y] _ /= <-.
+  rewrite in_itv /=.
+  rewrite mulr_ge0 //=; last by apply/ltW; rewrite invr_gt0.
+  rewrite -(@mulfV _ (f' y + g' y)); last by exact: lt0r_neq0.
+  apply: ler_pM => //.
+    by apply/ltW; rewrite invr_gt0.
+  by rewrite lerDl.
+Qed.
 
 Lemma perfectly_normal_space01_normal_closed :
   perfectly_normal_space01 -> normal_space_closed.
@@ -204,15 +264,14 @@ exists (f@^-1` `]1/2,+oo[); split.
 - apply/disj_setPRL.
   rewrite preimage_setC.
   apply: preimage_subset => x.
-  rewrite /= !in_itv /= andbT.
-  apply: contraTnot.
-  rewrite -leNgt; exact: ltW.
+  rewrite /= !in_itv /= andbT => /ltW.
+  by rewrite leNgt => /negP.
 - rewrite E0.
   apply: preimage_subset => x /= ->.
   by rewrite in_itv /= ltr_pdivlMr.
 - rewrite F1.
   apply: preimage_subset => x /= ->.
-  by rewrite in_itv /= andbT ltr_pdivrMr // mul1r ltr1n.
+  by rewrite in_itv /= ltr_pdivrMr // mul1r ltr1n.
 Qed.
 
 Lemma perfectly_normal_space01_normal :
