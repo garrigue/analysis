@@ -211,11 +211,9 @@ have [g [cg g0]] := pns0 F cF.
 have [f' [cf' f'_ge0 f'0]] := norm_preimage0 cf.
 have [g' [cg' g'_ge0 g'0]] := norm_preimage0 cg.
 have fg'_gt0 x : f' x + g' x > 0.
-  have := g'_ge0 x.
-  have := f'_ge0 x.
+  move: (f'_ge0 x) (g'_ge0 x).
   rewrite !le_eqVlt => /orP[/eqP|] Hf' /orP[/eqP|] Hg'.
-  + move: EF; rewrite f0 g0 -f'0 -g'0 => /disj_setPRL/(_ x) /=.
-    by rewrite -Hf' -Hg'; elim.
+  + by move: EF; rewrite f0 g0 -f'0 -g'0 => /disj_setPRL/(_ x); elim.
   + by rewrite -Hf' add0r.
   + by rewrite -Hg' addr0.
   + exact: addr_gt0.
@@ -225,8 +223,7 @@ exists (fun x => f' x / (f' x + g' x)); split.
   apply: continuous_comp; [exact/continuousD/cg'/cf' | exact: inv_continuous].
 - rewrite f0.
   case/seteqP: f'0 => f'f ff'.
-  apply/seteqP; split => x /=.
-    by move/ff' ->; rewrite mul0r.
+  apply/seteqP; split => x /=; first by move/ff' ->; rewrite mul0r.
   move/(f_equal (GRing.mul ^~ (f' x + g' x))).
   by rewrite -mulrA mulVf // mulr1 mul0r => /f'f.
 - rewrite g0.
@@ -239,8 +236,7 @@ exists (fun x => f' x / (f' x + g' x)); split.
 - move=> x [y] _ /= <-.
   rewrite in_itv /=.
   have fg'y : (f' y + g' y)^-1 >= 0 by apply/ltW; rewrite invr_gt0.
-  rewrite mulr_ge0 //= -(mulfV (fg'_neq0 y)).
-  by apply: ler_pM; rewrite // lerDl.
+  by rewrite mulr_ge0 //= -(mulfV (fg'_neq0 y)) ler_pM // lerDl.
 Qed.
 
 Lemma perfectly_normal_space01_normal_closed :
